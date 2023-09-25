@@ -16,7 +16,50 @@
     </style>
 
     <div class="container">
-        <form action="registration.php" method="post">
+        <?php
+        if (isset($_POST["submit"])) {
+            $fullName = $_POST["fullname"];
+            $email = $_POST["email"];
+            $password = $_POST["password"];
+            $passwordRepeat = $_POST["repeat_password"];
+
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+
+            $errors = array();
+
+            if (empty($fullName) OR empty($email) OR empty($password) OR empty($passwordRepeat)) {
+                array_push($errors,"Minden mezőt tölts ki!");
+            }
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                array_push($errors, "Email nem létezik!");
+            }
+            if (strlen($password)<8) {
+                array_push($errors,"A jelszó nem lehet kevesebb mint 8 karakter!");
+            }
+            if ($password!==$passwordRepeat) {
+                array_push($errors,"Nem egyezik meg a jelszó!");
+            }
+
+            if (count($errors)>0) {
+                foreach ($errors as  $error) {
+                    echo "<div class='alert alert-danger'>$error</div>";
+                }
+            }else{
+                require_once "database.php";
+                $sql = "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)";
+                $stmt = mysqli_stmt_init($conn);
+                $prepareStmt = mysqli_stmt_prepare($stmt, $sql);
+                if ($prepareStmt) {
+                    mysqli_stmt_bind_param($stmt,"sss",$fullName, $email, $passwordHash);
+                    mysqli_stmt_execute($stmt);
+                    echo "<div class='alert alert-success'>Sikeres regisztrálás!</div>";
+                } else {
+                    die("Hiba történt!:(");
+                }
+            }
+        }
+        ?>
+        <form action="index.php" method="post">
             <div class="form-group">
                 <input type="text" class="form-control" name="fullname" placeholder="Teljes Név:">
             </div>
